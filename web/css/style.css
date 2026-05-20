@@ -1,0 +1,33 @@
+/* dark defaults */
+body { background: #0d1117; color: #f1f5f9; }
+.band-row:hover td { background: rgba(255,255,255,0.03); }
+.cell { transition: background 0.2s; }
+
+/* light mode overrides */
+html:not(.dark) body { background: #f1f5f9; color: #0f172a; }
+html:not(.dark) .text-gray-100 { color: #0f172a !important; }
+html:not(.dark) .text-gray-300 { color: #334155 !important; }
+html:not(.dark) .text-gray-400 { color: #475569 !important; }
+html:not(.dark) .text-gray-500 { color: #64748b !important; }
+html:not(.dark) .text-gray-600 { color: #94a3b8 !important; }
+html:not(.dark) .text-gray-700 { color: #cbd5e1 !important; }
+html:not(.dark) .text-white    { color: #0f172a !important; }
+html:not(.dark) .bg-gray-900\/40,
+html:not(.dark) .bg-gray-900   { background-color: #ffffff !important; }
+html:not(.dark) .bg-gray-800\/20 { background-color: rgba(0,0,0,0.03) !important; }
+html:not(.dark) .border-gray-800 { border-color: #e2e8f0 !important; }
+html:not(.dark) .divide-gray-800 > * + * { border-color: #e2e8f0 !important; }
+html:not(.dark) .divide-x > * + *,
+html:not(.dark) .divide-y > * + * { border-color: #e2e8f0 !important; }
+html:not(.dark) .band-row:hover td { background: rgba(0,0,0,0.03); }
+html:not(.dark) .text-gray-800 { color: #e2e8f0 !important; }
+
+/* badge overrides in light mode */
+html:not(.dark) .bg-blue-950\/40   { background-color: #dbeafe !important; }
+html:not(.dark) .text-blue-400     { color: #1d4ed8 !important; }
+html:not(.dark) .bg-green-950\/40  { background-color: #dcfce7 !important; }
+html:not(.dark) .text-green-400    { color: #15803d !important; }
+html:not(.dark) .bg-yellow-950\/40 { background-color: #fef9c3 !important; }
+html:not(.dark) .text-yellow-300   { color: #a16207 !important; }
+html:not(.dark) .bg-red-950\/40    { background-color: #fee2e2 !important; }
+html:not(.dark) .text-red-300      { color: #b91c1c !important; }

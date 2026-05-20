@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="{{ $CURRENT_LANG }}" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="{{ CACHE_TTL }}">
+<title>OM Propagation Monitor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: 'class' }</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="js/charts.js"></script>
+<script>
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.classList.remove('dark');
+  } else {
+    document.documentElement.classList.add('dark');
+  }
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="text-gray-100 font-mono text-sm min-h-screen p-4">
+
+<!-- Header -->
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-white tracking-tight">OM Propagation Monitor</h1>
+      <p class="text-gray-400 mt-1 text-xs">
+        {{ t('subtitle', ['h' => WINDOW_SEC/3600]) }}
+      </p>
+    </div>
+    <div class="text-right text-xs text-gray-500">
+      <!-- Language switcher -->
+      <div class="flex gap-1 justify-end mb-2">
+        {% foreach ($SUPPORTED_LANGS as $l): %}
+        <a href="?lang={{ $l }}" class="{{ $l === $CURRENT_LANG ? 'text-white font-bold' : 'text-gray-600 hover:text-gray-400' }} uppercase">{{ $l }}</a>
+        {% if ($l !== end($SUPPORTED_LANGS)): %}<span class="text-gray-800">·</span>{% endif; %}
+        {% endforeach; %}
+      </div>
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" data-light="{{ t('light') }}" data-dark="{{ t('dark') }}"
+        class="mb-2 px-3 py-1 rounded border border-gray-700 text-gray-400 hover:text-gray-200 hover:border-gray-500 text-xs transition-colors" id="theme-btn">☀ {{ t('light') }}</button>
+      {% if ($updated): %}
+        <div>{{ t('updated') }}: <span class="text-gray-300">{{ gmdate('H:i:s', $updated) }} UTC</span></div>
+        <div>{{ t('cache_age') }}: <span class="text-gray-300">{{ $cache_age }}s</span></div>
+        <div>{{ t('next_refresh') }}: <span class="text-gray-300">{{ $next_refresh }}s</span></div>
+      {% else: %}
+        <div class="text-red-400">{{ t('no_data') }}</div>
+      {% endif; %}
+      <div class="mt-1">{{ t('total_spots') }}: <span class="text-white font-bold">{{ $grand_total }}</span></div>
+    </div>
+  </div>
+
+  <!-- Space Weather Panel -->
+  <div class="rounded-xl border border-gray-800 bg-gray-900/40 mb-6 overflow-hidden">
+
+    <!-- Main indices row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 divide-x divide-y divide-gray-800 border-b border-gray-800">
+
+      <div class="p-2 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-0">SFI</div>
+        <div id="chart-sfi"></div>
+        <div class="text-xs text-gray-600 -mt-2">{{ t('flux_sub') }}</div>
+      </div>
+
+      <div class="p-2 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-0">Sunspots</div>
+        <div id="chart-sunspots"></div>
+        <div class="text-xs text-gray-600 -mt-2">{{ t('sunspots_sub') }}</div>
+      </div>
+
+      <div class="p-2 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-0">A-index</div>
+        <div id="chart-aindex"></div>
+        <div class="text-xs text-gray-600 -mt-2">{{ t('aindex_sub') }}</div>
+      </div>
+
+      <div class="p-2 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-0">Kp-index</div>
+        <div id="chart-kp"></div>
+        <div class="text-xs text-gray-600 -mt-2">{{ t('kp_sub') }}</div>
+      </div>
+
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">X-Ray</div>
+        {% $xr = $noaa_xray_class ?? $xray; %}
+        <div class="text-2xl font-bold {{ xray_class($xr) }}">{{{ $xr ?: '—' }}}</div>
+        <div class="text-xs text-gray-600 mt-1">{{ t('solar_flare') }}</div>
+      </div>
+
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Aurora</div>
+        <div class="text-2xl font-bold text-purple-300">{{{ $aurora ?: '—' }}}</div>
+        <div class="text-xs text-gray-600 mt-1">{{ t('latitude') }}</div>
+      </div>
+
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Sol. Wind</div>
+        {% if ($noaa_wind_speed !== null): %}
+          <div class="text-2xl font-bold {{ wind_speed_class($noaa_wind_speed) }}">{{ round($noaa_wind_speed) }}</div>
+          <div class="text-xs text-gray-600 mt-1">km/s · {{ $noaa_wind_density !== null ? round($noaa_wind_density, 1) . ' p/cm³' : '' }}</div>
+        {% else: %}
+          <div class="text-2xl font-bold text-cyan-300">{{{ $swnd ?: '—' }}}</div>
+          <div class="text-xs text-gray-600 mt-1">km/s</div>
+        {% endif; %}
+      </div>
+
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">IMF Bz</div>
+        <div class="text-2xl font-bold {{ $bz_val !== null ? bz_class($bz_val) : 'text-gray-500' }}">
+          {{ $bz_val !== null ? sprintf('%+.1f', $bz_val) : '—' }}
+        </div>
+        <div class="text-xs text-gray-600 mt-1">nT</div>
+      </div>
+    </div>
+
+    <!-- NOAA R/S/G scales row -->
+    <div class="grid grid-cols-3 divide-x divide-gray-800 border-b border-gray-800">
+      {% foreach (['R' => t('r_scale'), 'S' => t('s_scale'), 'G' => t('g_scale')] as $key => $label): %}
+      {% $sc   = isset($nscales[$key]['scale']) ? intval($nscales[$key]['scale']) : null; %}
+      {% $text = $nscales[$key]['text'] ?? null; %}
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">
+          <span class="text-gray-400 font-bold">{{ $key }}</span>-scale · {{ $label }}
+        </div>
+        <div class="text-2xl font-bold {{ $sc !== null ? rsg_class($sc) : 'text-gray-500' }}">
+          {{ $sc !== null ? $key . $sc : '—' }}
+        </div>
+        <div class="text-xs text-gray-600 mt-1">{{{ $text ?? '' }}}</div>
+      </div>
+      {% endforeach; %}
+    </div>
+
+    <!-- Secondary indices row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-800 border-t border-b border-gray-800">
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">{{ t('geomag_field') }}</div>
+        <div class="text-lg font-bold {{ geomag_class($geomagfield) }}">{{{ $geomagfield ?: '—' }}}</div>
+      </div>
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">{{ t('signal_noise') }}</div>
+        <div class="text-lg font-bold text-gray-300">{{{ $signalnoise ?: '—' }}}</div>
+      </div>
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">foEs</div>
+        {% if ($lgdc_foes !== null): %}
+          <div class="text-lg font-bold {{ foes_class($lgdc_foes) }}">{{ $lgdc_foes > 0 ? number_format($lgdc_foes, 2) : '—' }}</div>
+          <div class="text-xs text-gray-600 mt-1">MHz · {{ t('sp_e') }}</div>
+        {% else: %}
+          <div class="text-lg font-bold text-gray-500">—</div>
+          <div class="text-xs text-gray-600 mt-1">MHz</div>
+        {% endif; %}
+      </div>
+      <div class="p-3 text-center">
+        <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">MUF(3Mm)</div>
+        {% if ($lgdc_mufd !== null): %}
+          <div class="text-lg font-bold {{ mufd_class($lgdc_mufd) }}">{{ number_format($lgdc_mufd, 1) }}</div>
+          <div class="text-xs text-gray-600 mt-1">MHz</div>
+        {% else: %}
+          <div class="text-lg font-bold text-gray-500">—</div>
+          <div class="text-xs text-gray-600 mt-1">MHz</div>
+        {% endif; %}
+      </div>
+    </div>
+
+    <!-- Ionosonde comparison: Dourbes vs Pruhonice -->
+    <div class="border-t border-gray-800 p-4">
+      <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">{{ t('ionosonde') }} <span class="text-gray-700 normal-case">(LGDC)</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        {% foreach ([['Dourbes (BE)', $lgdc_fof2, $lgdc_mufd, $lgdc_foes, $lgdc_cs], ['Pruhonice (CZ)', $lgdc_p_fof2, $lgdc_p_mufd, $lgdc_p_foes, $lgdc_p_cs]] as $stn): %}
+        {% [$stn_name, $stn_fof2, $stn_mufd, $stn_foes, $stn_cs] = $stn; %}
+        <div class="rounded border border-gray-800 p-2">
+          <div class="font-semibold text-gray-400 mb-2">{{{ $stn_name }}}</div>
+          <div class="grid grid-cols-3 gap-1 text-center">
+            <div>
+              <div class="text-gray-600 mb-0.5">foF2</div>
+              <div class="font-bold {{ $stn_fof2 !== null ? fof2_class($stn_fof2) : 'text-gray-500' }}">{{ $stn_fof2 !== null ? number_format($stn_fof2, 2) : '—' }}</div>
+              <div class="text-gray-700">MHz</div>
+            </div>
+            <div>
+              <div class="text-gray-600 mb-0.5">MUF</div>
+              <div class="font-bold {{ $stn_mufd !== null ? mufd_class($stn_mufd) : 'text-gray-500' }}">{{ $stn_mufd !== null ? number_format($stn_mufd, 1) : '—' }}</div>
+              <div class="text-gray-700">MHz</div>
+            </div>
+            <div>
+              <div class="text-gray-600 mb-0.5">foEs</div>
+              <div class="font-bold {{ $stn_foes !== null ? foes_class($stn_foes) : 'text-gray-500' }}">{{ ($stn_foes !== null && $stn_foes > 0) ? number_format($stn_foes, 2) : '—' }}</div>
+              <div class="text-gray-700">MHz</div>
+            </div>
+          </div>
+          {% if ($stn_cs !== null): %}<div class="text-gray-700 mt-1 text-right">CS {{ $stn_cs }}</div>{% endif; %}
+        </div>
+        {% endforeach; %}
+      </div>
+    </div>
+
+    <!-- HamQSL Band Conditions -->
+    <div class="p-4">
+      <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">{{ t('hf_conditions') }} <span class="text-gray-700 normal-case">(HamQSL)</span></div>
+      {% if (!empty($hq['bands'])): %}
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-gray-600">
+            <th class="text-left pb-1">{{ t('band') }}</th>
+            <th class="text-center pb-1">{{ t('day') }}</th>
+            <th class="text-center pb-1">{{ t('night') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800/30">
+          {% foreach ($hq['bands'] as $bname => $btypes): %}
+          <tr>
+            <td class="py-1 text-gray-400">{{{ $bname }}}</td>
+            <td class="py-1 text-center font-semibold {{ band_cond_class($btypes['day'] ?? '') }}">
+              {{{ $btypes['day'] ?? '—' }}}
+            </td>
+            <td class="py-1 text-center font-semibold {{ band_cond_class($btypes['night'] ?? '') }}">
+              {{{ $btypes['night'] ?? '—' }}}
+            </td>
+          </tr>
+          {% endforeach; %}
+        </tbody>
+      </table>
+      {% elseif (isset($hq['error'])): %}
+        <div class="text-red-500 text-xs">{{{ $hq['error'] }}}</div>
+      {% else: %}
+        <div class="text-gray-600 text-xs">{{ t('no_band_data') }}</div>
+      {% endif; %}
+    </div>
+
+    <!-- VHF Conditions -->
+    <div class="border-t border-gray-800 p-4">
+      <div class="text-xs text-gray-500 uppercase tracking-widest mb-3">{{ t('vhf_conditions') }} <span class="text-gray-700 normal-case">(HamQSL · LGDC · PSK)</span></div>
+
+      <!-- 2m Es Europe -->
+      <div class="flex flex-wrap items-center gap-3 mb-3 pb-3 border-b border-gray-800/50">
+        <span class="text-xs text-gray-400 font-semibold shrink-0">{{ t('es_2m_label') }}</span>
+        {% if ($es_2m_level === 3): %}
+          <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-900/50 text-emerald-300 animate-pulse">STRONG</span>
+        {% elseif ($es_2m_level === 2): %}
+          <span class="px-2 py-0.5 rounded text-xs font-bold bg-yellow-900/50 text-yellow-300">LIKELY</span>
+        {% elseif ($es_2m_level === 1): %}
+          <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-900/50 text-blue-400">MARGINAL</span>
+        {% else: %}
+          <span class="text-xs text-gray-700 font-bold">NONE</span>
+        {% endif; %}
+        <span class="text-xs text-gray-700 flex gap-3">
+          <span>foEs {{ $foes_max > 0 ? number_format($foes_max, 1) . ' MHz' : '—' }}</span>
+          {% if ($eskip_2m_eu): %}<span>HamQSL: {{{ $eskip_2m_eu }}}</span>{% endif; %}
+          {% if ($spots_2m_eu > 0): %}<span class="text-green-600">{{ $spots_2m_eu }} PSK 2m EU</span>{% endif; %}
+        </span>
+      </div>
+
+      {% if (!empty($hq['vhf'])): %}
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-gray-600">
+            <th class="text-left pb-1">{{ t('phenomenon') }}</th>
+            <th class="text-left pb-1">{{ t('location') }}</th>
+            <th class="text-center pb-1">{{ t('condition') }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800/30">
+          {% foreach ($hq['vhf'] as $phenomenon => $locations): %}
+            {% foreach ($locations as $loc => $cond): %}
+            <tr>
+              <td class="py-1 text-gray-300">{{{ str_replace(['-','_'], ' ', $phenomenon) }}}</td>
+              <td class="py-1 text-gray-400">{{{ str_replace('_', ' ', $loc) }}}</td>
+              <td class="py-1 text-center font-semibold {{ vhf_cond_class($cond) }}">{{{ $cond }}}</td>
+            </tr>
+            {% endforeach; %}
+          {% endforeach; %}
+        </tbody>
+      </table>
+      {% endif; %}
+    </div>
+
+    <!-- Kp & SFI Trend -->
+    <div class="border-t border-gray-800 px-4 pt-3 pb-1">
+      <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">{{ t('trend_title', ['kp_days' => KP_HISTORY_DAYS, 'sfi_days' => SFI_HISTORY_DAYS]) }}</div>
+      <div id="chart-trend"></div>
+    </div>
+
+    <!-- Sources footer -->
+    <div class="border-t border-gray-800 px-4 py-2 text-xs text-gray-700 flex justify-between">
+      <span>{{ t('sources') }}: HamQSL Solar XML · NOAA SWPC · LGDC Dourbes · LGDC Pruhonice</span>
+      <span>{{ t('cache') }}: {{ SOLAR_TTL/60 }} min
+        {% if ($solar['fetched'] ?? null): %}
+          · {{ t('updated') }} {{ gmdate('H:i', $solar['fetched']) }} UTC
+        {% endif; %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Band × Continent Matrix -->
+  {% if ($has_data): %}
+  <div class="rounded-xl border border-gray-800 bg-gray-900/40 overflow-hidden mb-6">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="bg-gray-900 text-gray-400 text-xs uppercase tracking-widest">
+          <th class="py-3 px-4 text-left border-r border-gray-800 w-16">{{ t('band') }}</th>
+          {% foreach ($CONTINENTS as $c): %}
+          <th class="py-3 px-2 text-center border-r border-gray-800 last:border-r-0 min-w-[60px]">{{ $c }}</th>
+          {% endforeach; %}
+          <th class="py-3 px-3 text-center text-gray-600 w-14">∑</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800/50">
+        {% foreach ($BANDS as $band): %}
+        {% $row_sum = array_sum(array_values($matrix[$band] ?? [])); %}
+        {% $active  = $row_sum > 0; %}
+        <tr class="band-row {{ $active ? '' : 'opacity-30' }}">
+          <td class="py-2 px-4 border-r border-gray-800 font-bold {{ $active ? 'text-yellow-400' : 'text-gray-600' }} text-right">{{ $band }}</td>
+          {% foreach ($CONTINENTS as $cont): %}
+          {% $n = cell_count($matrix, $band, $cont); %}
+          <td class="cell py-2 px-2 text-center border-r border-gray-800 last:border-r-0">
+            {% if ($n > 0): %}
+              <span class="inline-block rounded px-2 py-0.5 {{ cell_classes($n) }} text-sm font-semibold">{{ $n }}</span>
+            {% else: %}
+              <span class="text-gray-800">·</span>
+            {% endif; %}
+          </td>
+          {% endforeach; %}
+          <td class="py-2 px-3 text-center text-gray-500 text-xs">{{ $row_sum ?: '' }}</td>
+        </tr>
+        {% endforeach; %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Locator × Continent Matrix -->
+  <div class="rounded-xl border border-gray-800 bg-gray-900/40 overflow-hidden mb-6">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="bg-gray-900 text-gray-400 text-xs uppercase tracking-widest">
+          <th class="py-3 px-4 text-left border-r border-gray-800 w-28">{{ t('locator') }}</th>
+          {% foreach ($CONTINENTS as $c): %}
+          <th class="py-3 px-2 text-center border-r border-gray-800 last:border-r-0 min-w-[60px]">{{ $c }}</th>
+          {% endforeach; %}
+          <th class="py-3 px-3 text-center text-gray-600 w-14">∑</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800/50">
+        {% if ($sender_matrix): %}
+          {% foreach ($sender_matrix as $om => $conts): %}
+          {% $row_sum = array_sum($conts); %}
+          <tr class="band-row">
+            <td class="py-2 px-4 border-r border-gray-800 font-bold text-yellow-400 text-right">{{{ $om }}}</td>
+            {% foreach ($CONTINENTS as $cont): %}
+            {% $n = $conts[$cont] ?? 0; %}
+            <td class="cell py-2 px-2 text-center border-r border-gray-800 last:border-r-0">
+              {% if ($n > 0): %}
+                <span class="inline-block rounded px-2 py-0.5 {{ cell_classes($n) }} text-sm font-semibold">{{ $n }}</span>
+              {% else: %}
+                <span class="text-gray-800">·</span>
+              {% endif; %}
+            </td>
+            {% endforeach; %}
+            <td class="py-2 px-3 text-center text-gray-500 text-xs">{{ $row_sum }}</td>
+          </tr>
+          {% endforeach; %}
+        {% else: %}
+          <tr>
+            <td colspan="{{ count($CONTINENTS) + 2 }}" class="py-4 text-center text-gray-600 text-xs">{{ t('no_om_heard') }}</td>
+          </tr>
+        {% endif; %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div class="flex gap-4 mb-6 text-xs text-gray-400">
+    <span class="font-semibold text-gray-500 mr-1">{{ t('signal_level') }}:</span>
+    <span class="text-blue-400">1–3 {{ t('level_weak') }}</span>
+    <span class="text-green-400">4–10 {{ t('level_good') }}</span>
+    <span class="text-yellow-300">11–30 {{ t('level_strong') }}</span>
+    <span class="text-red-300 font-bold">31+ {{ t('level_excellent') }}</span>
+    <span class="ml-auto text-gray-600">{{ t('spots_suffix') }}</span>
+  </div>
+
+  <!-- Recent Spots -->
+  {% if ($recent): %}
+  <div class="rounded-xl border border-gray-800 bg-gray-900/40 overflow-hidden">
+    <div class="bg-gray-900 px-4 py-2 text-xs text-gray-400 uppercase tracking-widest border-b border-gray-800">
+      {{ t('recent_reports') }} [{{ count($recent) }}]
+    </div>
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="text-gray-600 border-b border-gray-800/50">
+          <th class="py-2 px-3 text-left">UTC</th>
+          <th class="py-2 px-3 text-left">{{ t('om_station') }}</th>
+          <th class="py-2 px-3 text-left">{{ t('heard_by') }}</th>
+          <th class="py-2 px-3 text-center">{{ t('band') }}</th>
+          <th class="py-2 px-3 text-center">{{ t('cont') }}</th>
+          <th class="py-2 px-3 text-center">Mode</th>
+          <th class="py-2 px-3 text-right">SNR</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800/30">
+        {% foreach ($recent as $r): %}
+        <tr class="hover:bg-gray-800/20">
+          <td class="py-1.5 px-3 text-gray-500">{{ gmdate('H:i', $r['ts']) }}</td>
+          <td class="py-1.5 px-3 text-yellow-400 font-semibold">{{{ $r['sender'] }}}</td>
+          <td class="py-1.5 px-3 text-cyan-400">{{{ $r['receiver'] }}}</td>
+          <td class="py-1.5 px-3 text-center text-white">{{{ $r['band'] }}}</td>
+          <td class="py-1.5 px-3 text-center"><span class="text-green-400">{{{ $r['continent'] }}}</span></td>
+          <td class="py-1.5 px-3 text-center text-gray-400">{{{ $r['mode'] }}}</td>
+          <td class="py-1.5 px-3 text-right {{ ($r['snr'] ?? 0) > 0 ? 'text-green-400' : 'text-gray-400' }}">
+            {{ $r['snr'] !== null ? sprintf('%+d dB', $r['snr']) : '—' }}
+          </td>
+        </tr>
+        {% endforeach; %}
+      </tbody>
+    </table>
+  </div>
+  {% endif; %}
+
+  {% else: %}
+  <div class="rounded-xl border border-red-900 bg-red-950/30 p-8 text-center text-red-400">
+    {{ t('fetch_failed') }}
+  </div>
+  {% endif; %}
+
+  <div class="mt-4 text-center text-xs text-gray-700">
+    Data: <a href="https://pskreporter.info" class="hover:text-gray-500">PSKReporter.info</a> ·
+    {{ t('auto_refresh', ['min' => CACHE_TTL/60]) }} ·
+    {{ t('om_description') }}
+  </div>
+  <div class="mt-1 text-center text-xs text-gray-800">
+    &copy; {{ date('Y') }} OM1PU
+  </div>
+</div>
+
+<script>
+  {% $sfi_val  = $noaa_sfi ?? $sfi; %}
+  {% $kp_val   = $noaa_kp  ?? $kindex; %}
+  {% function kpColor($v)  { if (!is_numeric($v)) return '#94a3b8'; if ($v <= 3) return '#4ade80'; if ($v <= 5) return '#fbbf24'; return '#f87171'; } %}
+  {% function aColor($v)   { if (!is_numeric($v)) return '#94a3b8'; if ($v <= 15) return '#4ade80'; if ($v <= 50) return '#fbbf24'; return '#f87171'; } %}
+  {% function sfiColor($v) { if (!is_numeric($v)) return '#94a3b8'; if ($v >= 150) return '#4ade80'; if ($v >= 100) return '#fbbf24'; return '#94a3b8'; } %}
+  makeGauge('chart-sfi',      {{ json_encode($sfi_val ?: null) }},  300, 'SFI',      '{{ sfiColor($sfi_val) }}');
+  makeGauge('chart-sunspots', {{ json_encode($sunspots ?: null) }}, 250, 'Sunspots', '#fb923c');
+  makeGauge('chart-aindex',   {{ json_encode($aindex ?: null) }},   100, 'A-index',  '{{ aColor($aindex) }}');
+  makeGauge('chart-kp',       {{ json_encode($kp_val ?: null) }},     9, 'Kp',       '{{ kpColor($kp_val) }}');
+</script>
+<script>
+  makeTrendChart('chart-trend', {{ json_encode($kp_history) }}, {{ json_encode($sfi_history) }});
+</script>
+<script src="js/theme.js"></script>
+</body>
+</html>
