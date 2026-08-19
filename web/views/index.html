@@ -94,7 +94,7 @@
 
       <div class="p-3 text-center">
         <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Aurora</div>
-        <div class="text-2xl font-bold text-purple-300">{{{ $aurora ?: '—' }}}</div>
+        <div class="text-2xl font-bold text-violet-400">{{{ $aurora ?: '—' }}}</div>
         <div class="text-xs text-gray-600 mt-1">{{ t('latitude') }}</div>
       </div>
 
@@ -104,7 +104,7 @@
           <div class="text-2xl font-bold {{ wind_speed_class($noaa_wind_speed) }}">{{ round($noaa_wind_speed) }}</div>
           <div class="text-xs text-gray-600 mt-1">km/s · {{ $noaa_wind_density !== null ? round($noaa_wind_density, 1) . ' p/cm³' : '' }}</div>
         {% else: %}
-          <div class="text-2xl font-bold text-cyan-300">{{{ $swnd ?: '—' }}}</div>
+          <div class="text-2xl font-bold text-sky-400">{{{ $swnd ?: '—' }}}</div>
           <div class="text-xs text-gray-600 mt-1">km/s</div>
         {% endif; %}
       </div>
@@ -339,8 +339,8 @@
     <span class="font-semibold text-gray-500 mr-1">{{ t('signal_level') }}:</span>
     <span class="text-blue-400">1–3 {{ t('level_weak') }}</span>
     <span class="text-green-400">4–10 {{ t('level_good') }}</span>
-    <span class="text-yellow-300">11–30 {{ t('level_strong') }}</span>
-    <span class="text-red-300 font-bold">31+ {{ t('level_excellent') }}</span>
+    <span class="text-amber-400">11–30 {{ t('level_strong') }}</span>
+    <span class="text-red-400 font-bold">31+ {{ t('level_excellent') }}</span>
     <span class="ml-auto text-gray-600">{{ t('spots_suffix') }}</span>
   </div>
 

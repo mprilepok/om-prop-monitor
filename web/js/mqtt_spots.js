@@ -211,8 +211,8 @@
 
   // ── Cell styling (mirrors PHP cell_classes) ───────────────────────────────
   function cellClasses(n) {
-    if (n >= 31) return 'text-red-300 bg-red-950/40 font-bold';
-    if (n >= 11) return 'text-yellow-300 bg-yellow-950/40';
+    if (n >= 31) return 'text-red-400 bg-red-950/30 font-bold';
+    if (n >= 11) return 'text-amber-400 bg-amber-950/30';
     if (n >= 4)  return 'text-green-400 bg-green-950/40';
     return 'text-blue-400 bg-blue-950/40';
   }
@@ -237,7 +237,7 @@
       ).join('');
 
       return `<tr class="band-row ${active ? '' : 'opacity-30'}">
-        <td class="py-2 px-4 border-r border-gray-800 font-bold ${active ? 'text-yellow-400' : 'text-gray-600'} text-right">${band}</td>
+        <td class="py-2 px-4 border-r border-gray-800 font-bold ${active ? 'text-sky-300' : 'text-gray-600'} text-right">${band}</td>
         ${cells}
         <td class="py-2 px-3 text-center text-gray-500 text-xs">${rowSum || ''}</td>
       </tr>`;
@@ -267,7 +267,7 @@
       ).join('');
 
       return `<tr class="band-row">
-        <td class="py-2 px-4 border-r border-gray-800 font-bold text-yellow-400 text-right">${grid}</td>
+        <td class="py-2 px-4 border-r border-gray-800 font-bold text-sky-300 text-right">${grid}</td>
         ${cells}
         <td class="py-2 px-3 text-center text-gray-500 text-xs">${rowSum}</td>
       </tr>`;
@@ -306,11 +306,11 @@
         const cont   = gridToCont(s.rxGrid);
         const dxKm   = s.dx ? s.dx.km.toLocaleString()  : '—';
         const dxBrg  = s.dx ? s.dx.brg + '°'            : '';
-        const dxCls  = s.dx && s.dx.km >= 5000 ? 'text-yellow-300' : (s.dx ? 'text-gray-400' : 'text-gray-700');
+        const dxCls  = s.dx && s.dx.km >= 5000 ? 'text-amber-300' : (s.dx ? 'text-gray-400' : 'text-gray-700');
         return `<tr class="hover:bg-gray-800/20">
           <td class="py-1.5 px-3 text-gray-500">${s.utcStr}</td>
-          <td class="py-1.5 px-3 text-yellow-400 font-semibold">${s.sender}</td>
-          <td class="py-1.5 px-3 text-cyan-400">${s.receiver}</td>
+          <td class="py-1.5 px-3 text-amber-400 font-semibold">${s.sender}</td>
+          <td class="py-1.5 px-3 text-sky-300">${s.receiver}</td>
           <td class="py-1.5 px-3 text-center text-white">${s.band}</td>
           <td class="py-1.5 px-3 text-center text-gray-400">${s.mode}</td>
           <td class="py-1.5 px-3 text-center"><span class="text-green-400">${cont}</span></td>
@@ -330,7 +330,7 @@
     const el = document.getElementById('mqtt-status');
     if (!el) return;
     const map = {
-      connecting: ['● Connecting…', 'text-yellow-400'],
+      connecting: ['● Connecting…', 'text-amber-400'],
       live      : ['● LIVE',        'text-green-400'],
       offline   : ['● Offline',     'text-red-500'],
     };

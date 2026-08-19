@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Redirect bare root and /index.php to canonical path
+RewriteCond %{REQUEST_URI} ^/?$
+RewriteRule ^ https://ham.prilepok.cloud/propagation/ [R=301,L]
+
+RewriteCond %{REQUEST_URI} ^/index\.php$
+RewriteRule ^ https://ham.prilepok.cloud/propagation/ [R=301,L]

@@ -300,22 +300,22 @@ function sfi_class(string $v): string {
     $n = intval($v);
     if ($n <= 0)   return 'text-gray-500';
     if ($n < 70)   return 'text-red-400';
-    if ($n < 100)  return 'text-yellow-400';
+    if ($n < 100)  return 'text-amber-400';
     if ($n < 150)  return 'text-green-400';
-    return 'text-emerald-300 font-bold';
+    return 'text-green-300 font-bold';
 }
 
 function kp_class(string $v): string {
     $n = floatval($v);
     if ($n < 3)  return 'text-green-400';
-    if ($n < 5)  return 'text-yellow-400';
+    if ($n < 5)  return 'text-amber-400';
     return 'text-red-400 font-bold';
 }
 
 function a_class(string $v): string {
     $n = intval($v);
     if ($n <= 7)   return 'text-green-400';
-    if ($n <= 15)  return 'text-yellow-400';
+    if ($n <= 15)  return 'text-amber-400';
     if ($n <= 29)  return 'text-orange-400';
     return 'text-red-400 font-bold';
 }
@@ -323,9 +323,9 @@ function a_class(string $v): string {
 function band_cond_class(string $cond): string {
     $c = strtolower(trim(strtolower($cond)));
     if ($c === 'good')      return 'text-green-400';
-    if ($c === 'fair')      return 'text-yellow-400';
+    if ($c === 'fair')      return 'text-amber-400';
     if ($c === 'poor')      return 'text-red-400';
-    if ($c === 'excellent') return 'text-emerald-300 font-bold';
+    if ($c === 'excellent') return 'text-green-300 font-bold';
     return 'text-gray-400';
 }
 
@@ -333,14 +333,14 @@ function xray_class(string $v): string {
     $v = strtoupper(trim($v));
     if (strpos($v, 'X') === 0) return 'text-red-400 font-bold';
     if (strpos($v, 'M') === 0) return 'text-orange-400';
-    if (strpos($v, 'C') === 0) return 'text-yellow-400';
+    if (strpos($v, 'C') === 0) return 'text-amber-400';
     return 'text-green-400';
 }
 
 function geomag_class(string $v): string {
     $v = strtoupper(trim($v));
     if (strpos($v, 'QUIET')   !== false) return 'text-green-400';
-    if (strpos($v, 'UNSETTL') !== false) return 'text-yellow-400';
+    if (strpos($v, 'UNSETTL') !== false) return 'text-amber-400';
     if (strpos($v, 'ACTIVE')  !== false) return 'text-orange-400';
     if (strpos($v, 'STORM')   !== false) return 'text-red-400 font-bold';
     return 'text-gray-300';
@@ -348,7 +348,7 @@ function geomag_class(string $v): string {
 
 function rsg_class(int $scale): string {
     if ($scale === 0) return 'text-green-400';
-    if ($scale === 1) return 'text-yellow-400';
+    if ($scale === 1) return 'text-amber-400';
     if ($scale === 2) return 'text-orange-400';
     if ($scale === 3) return 'text-red-400';
     return 'text-red-400 font-bold animate-pulse';
@@ -356,53 +356,53 @@ function rsg_class(int $scale): string {
 
 function bz_class(float $bz): string {
     if ($bz >= -5)  return 'text-green-400';
-    if ($bz >= -10) return 'text-yellow-400';
+    if ($bz >= -10) return 'text-amber-400';
     if ($bz >= -20) return 'text-orange-400';
     return 'text-red-400 font-bold';
 }
 
 function fof2_class(float $v): string {
     if ($v < 4)  return 'text-red-400';
-    if ($v < 6)  return 'text-yellow-400';
+    if ($v < 6)  return 'text-amber-400';
     if ($v < 8)  return 'text-green-400';
-    return 'text-emerald-300 font-bold';
+    return 'text-green-300 font-bold';
 }
 
 function mufd_class(float $v): string {
     if ($v < 10) return 'text-red-400';
-    if ($v < 15) return 'text-yellow-400';
+    if ($v < 15) return 'text-amber-400';
     if ($v < 20) return 'text-green-400';
-    return 'text-emerald-300 font-bold';
+    return 'text-green-300 font-bold';
 }
 
 function vhf_cond_class(string $cond): string {
     $c = strtolower(trim($cond));
     if (strpos($c, 'band closed') !== false) return 'text-gray-500';
     if (strpos($c, 'good')        !== false) return 'text-green-400';
-    if (strpos($c, 'fair')        !== false) return 'text-yellow-400';
+    if (strpos($c, 'fair')        !== false) return 'text-amber-400';
     if (strpos($c, 'poor')        !== false) return 'text-red-400';
-    if (strpos($c, 'aurora')      !== false) return 'text-purple-400';
+    if (strpos($c, 'aurora')      !== false) return 'text-violet-400';
     // Any non-closed condition (e.g. "50MHz ES") = active
-    return 'text-emerald-300 font-bold';
+    return 'text-green-300 font-bold';
 }
 
 function foes_class(float $v): string {
     if ($v <= 0)  return 'text-gray-500';
     if ($v < 2)   return 'text-gray-400';
     if ($v < 25)  return 'text-blue-400';
-    if ($v < 50)  return 'text-yellow-400';
-    return 'text-emerald-300 font-bold';
+    if ($v < 50)  return 'text-amber-400';
+    return 'text-green-300 font-bold';
 }
 
 function wind_speed_class(float $v): string {
     if ($v < 400) return 'text-green-400';
-    if ($v < 600) return 'text-yellow-400';
+    if ($v < 600) return 'text-amber-400';
     if ($v < 800) return 'text-orange-400';
     return 'text-red-400 font-bold';
 }
 
 function wind_density_class(float $v): string {
     if ($v < 5)  return 'text-green-400';
-    if ($v < 15) return 'text-yellow-400';
+    if ($v < 15) return 'text-amber-400';
     return 'text-orange-400';
 }
